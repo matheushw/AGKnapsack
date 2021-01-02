@@ -44,3 +44,13 @@ KnapsackProblem generate_problem(int n_elements, int min_capacity, int max_capac
 
     return p;
 }
+
+// Gera uma solução aleatória para o problema
+bool* generate_solution(KnapsackProblem p){
+    bool* s = malloc(sizeof(bool) * p.n_elements);
+
+    for (int i = 0; i < p.n_elements; i++){
+        s[i] = rand() % 2;
+    }
+    return s;
+}
