@@ -9,7 +9,7 @@ typedef long long ll;
 
 // Retorna o fitness da solução para o problema proposto
 // Se o peso total da solução for maior que a capacidade, retorna -1
-ll evaluate (KnapsackProblem p, bool* solution){
+ll evaluate_solution (KnapsackProblem p, bool* solution){
 
     ll value = 0;
     ll weight = 0;

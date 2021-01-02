@@ -25,3 +25,7 @@ KnapsackProblem generate_problem (
         int min_capacity, int max_capacity,
         int min_value, int max_value,
         int min_weight, int max_weight);
+
+
+// Gera uma solução aleatória para o problema
+bool* generate_solution(KnapsackProblem p);
