@@ -20,7 +20,7 @@ ll evaluate_solution (KnapsackProblem p, bool* solution){
             weight += p.weights[i];
         }
     
-        if (weight > p.capacity) return -1;
+        if (weight > p.capacity) return -1 * weight;
     }
     
     return value;
@@ -50,7 +50,7 @@ bool* generate_solution(KnapsackProblem p){
     bool* s = malloc(sizeof(bool) * p.n_elements);
 
     for (int i = 0; i < p.n_elements; i++){
-        s[i] = rand() % 2;
+        s[i] = 0;
     }
     return s;
 }
