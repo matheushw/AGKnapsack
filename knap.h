@@ -1,5 +1,5 @@
 #include <stdbool.h>
-
+#pragma once
 
 // Estrutura representando uma instância do problema knapsack
 typedef struct {
