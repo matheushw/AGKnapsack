@@ -35,6 +35,7 @@ ll greedy_solution (KnapsackProblem p){
 
     // Sorts the indices according to their value density
     qsort_r(indices, p.n_elements, sizeof(int), compare_indices, value_density);
+    free(value_density);
     
 
     // Finds a solution by taking the objects in their order of density
@@ -46,8 +47,10 @@ ll greedy_solution (KnapsackProblem p){
         solution[indices[i]] = true;
         solution_size += p.weights[indices[i]];
     }
-    
-    return evaluate_solution(p, solution);
+    free(indices);
+    long long score = evaluate_solution(p, solution);
+    free(solution);
+    return score;
 }
 
 
@@ -86,7 +89,7 @@ ll solve(int index, ll weight, KnapsackProblem p, ll** dp){
     }
 
     // If we have done all steps, delete the table
-    if (dp == 0){
+    if (index == 0){
         for (int i = 0; i < p.n_elements; i++) free(dp[i]);
         free(dp);
         
