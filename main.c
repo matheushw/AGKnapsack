@@ -5,6 +5,12 @@
 #include <stdio.h>
 #include <time.h>
 
+#define MUTATION_PERIOD 30
+#define STANDARD_MUTATION_RATE 10
+#define AUGMENTED_MUTATION_RATE 70
+#define DIMINISHED_MUTATION_RATE 2
+
+
 // Returns indexes of Father and Mother selected by tourney of two
 int* selectionTourneyOfTwo(long long* fitnesses,int popSize,int bestFit){
 	int firstFather = rand() % popSize;
@@ -70,12 +76,8 @@ bool* crossover(bool* Father,bool* Mother,int chromSize){
 }
 
 // Binary -> Flips a random gene in cromossome
-//TODO: use external mutation rate
-//TODO: maybe implement variable mutation rate?
-void mutate(bool* cromossome,int chromSize){
-	int mutation = rand() % 101;
-
-	if(mutation >= 10){	//PLACEHOLDER: 90% mutation chance
+void mutate(bool* cromossome,int chromSize, int mutationRate){
+    while(rand() % 101 >= mutationRate){
 		int mutatedGene = rand() % chromSize;
 		cromossome[mutatedGene] = (cromossome[mutatedGene]+1) % 2;
 	}
@@ -93,7 +95,7 @@ long long* evaluatePopulation(KnapsackProblem* kProblem,bool** population,int po
 
 // prevBest é só pra printar, em funcionalidade não muda nada aliás, a função
 // pode retornar void tbm, só retorna o bestFit pra poder printar tbm
-long long passGeneration(KnapsackProblem* kProblem,bool** population,int popSize,int* select(),long long prevBest){
+long long passGeneration(KnapsackProblem* kProblem,bool** population,int popSize,int* select(),long long prevBest, int mutationRate){
 	long long* popFitnesses = evaluatePopulation(kProblem,population,popSize);
 
 	int bestFit = maxFitness(popFitnesses,popSize);
@@ -113,7 +115,7 @@ long long passGeneration(KnapsackProblem* kProblem,bool** population,int popSize
 		bool* Father = population[parents[0]];
 		bool* Mother = population[parents[1]];
 		bool* child = crossover(Father,Mother,chromSize);
-		mutate(child,chromSize);
+		mutate(child,chromSize,mutationRate);
 
 		nextPopulation[i] = child;
 		free(parents);
@@ -185,13 +187,33 @@ int main(int argc, char const *argv[]){
 	printf("Insira a quantidade de gerações: ");
 	int genQty; scanf("%d",&genQty);
 
+    int mutationRate = STANDARD_MUTATION_RATE;
+
 	long long curBest = -1;
+    int genCont = 0;
+    int mutationHolder = 0;
+    int mutationHolderFlag = 0;
+
 	for(int i = 0;i < genQty;i++){
-		long long nextBest = passGeneration(&kProblem,population,popSize,selectionElitism,curBest);
+		long long nextBest = passGeneration(&kProblem,population,popSize,selectionElitism,curBest,mutationRate);
 		if(nextBest > curBest){
 			printf(" on Gen [%d]\n",i);
 			curBest = nextBest;
-		}
+		} else if (nextBest == curBest && genCont == MUTATION_PERIOD){
+			if(mutationHolderFlag == 0){ //Abaixa a taxa de mutação
+				mutationRate = DIMINISHED_MUTATION_RATE;
+				mutationHolderFlag = 1;
+				genCont = 0;
+			} else if(mutationHolderFlag == 1){ //Aumenta a taxa de mutação
+				mutationRate = AUGMENTED_MUTATION_RATE;
+				mutationHolderFlag = 2;
+				genCont = 0;
+			} else { //Volta a taxa de mutação para o padrão
+				mutationRate = STANDARD_MUTATION_RATE;
+				mutationHolderFlag = 0;
+				genCont = 0;
+			}
+		}			
 	}
 
 	printf("Final pop: \n");
