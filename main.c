@@ -5,6 +5,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <time.h>
+#include <getopt.h>
 
 #define PREDATION_PERIOD 100
 #define MUTATION_PERIOD 100
@@ -165,8 +166,22 @@ long long passGeneration(KnapsackProblem* kProblem,bool** population,int popSize
 	return nextBest; // so pra printar
 }
 
+int n_elements = 1000;
+int min_capacity = 1;
+int max_capacity = 1000;
+int min_value = 1;
+int max_value = 1000;
+int min_weight = 1; 
+int max_weight = 1000;
+int flag_predacao = 0;
+int flag_mutacao_variavel = 0;
+int flag_verbose;
+int seed = -1;
+int* (*selection)(long long*, int, int) = &selectionRoulette;
+
 // Só pro print da população inicial
 void printSolution(bool* solution,KnapsackProblem kProblem){
+    if (!flag_verbose) return;
 	printf("Sol: [ %d",solution[0]);
 	for(size_t i = 1; i < kProblem.n_elements; i++){
 		printf(", %d",solution[i]);
@@ -174,25 +189,82 @@ void printSolution(bool* solution,KnapsackProblem kProblem){
 	printf("] Fitness: %lld\n",evaluate_solution(kProblem,solution));
 }
 
+
 int main(int argc, char const *argv[]){
-	if(argc != 10){
-		printf("Passe os seguintes parâmetros: <n_elementos> <capacidade_min>"
-		" <capacidade_max> <val_min> <val_max> <peso_min> <peso_max> <flag_predacao> <flag_mutacao_variavel>\n");
-		return 0;
-	}
 
-	srand(time(NULL));
+    while (1){
+        static struct option long_options[] = {
+            {"--verbose", no_argument, &flag_verbose, 1},
+            {"--quiet", no_argument, &flag_verbose, 0},
 
-	int n_elements = atoi(argv[1]);
-    int min_capacity = atoi(argv[2]);
-	int max_capacity = atoi(argv[3]);
-    int min_value = atoi(argv[4]);
-	int max_value = atoi(argv[5]);
-    int min_weight = atoi(argv[6]);
-	int max_weight = atoi(argv[7]);
-	int flag_predacao = atoi(argv[8]);
-	int flag_mutacao_variavel = atoi(argv[9]);
+            {"--n-elements", required_argument, 0, 'n'},
+            {"--min-capacity", required_argument, 0, 'c'},
+            {"--max-capacity", required_argument, 0, 'C'},
+            {"--min-value", required_argument, 0, 'v'},
+            {"--max-value", required_argument, 0, 'V'},
+            {"--min-weight", required_argument, 0, 'w'},
+            {"--max-weight", required_argument, 0, 'W'},
+            
+            {"--selection", required_argument, 0, 'S'},
+            {"--predation", no_argument, &flag_predacao, 1},
+            {"--ada-mutation", no_argument, &flag_mutacao_variavel, 1},
+            {"--seed", required_argument, 0, 's'},
 
+            {0,0,0,0}
+        };
+
+        int opt = 0, c;
+        c = getopt_long(argc, (char *const *) argv, "n:c:C:v:V:w:W:S:s:", long_options, &opt);
+
+        if (c == -1) break;
+
+        switch(c){
+            case 'n':
+                n_elements = atoi(optarg);
+                break;
+            case 'c':
+                min_capacity = atoi(optarg);
+                break;
+            case 'C':
+                max_capacity = atoi(optarg);
+                break;
+            case 'v':
+                min_value = atoi(optarg);
+                break;
+            case 'V':
+                max_value = atoi(optarg);
+                break;
+            case 'w':
+                min_weight = atoi(optarg);
+                break;
+            case 'W':
+                max_weight = atoi(optarg);
+                break;
+            case 's':
+                seed = atoi(optarg);
+                break;
+            case 'S':
+                if (strcmp(optarg, "elitismo") == 0){
+                    selection = &selectionElitism;
+                }else if (strcmp(optarg, "torneio") == 0){
+                    selection = &selectionTourneyOfTwo;
+                }else{
+                    selection = &selectionRoulette;
+                }
+                break;
+            default:
+                printf("Invalid option\n");
+                return 0;
+                break;
+                
+        }
+    }
+
+
+
+
+
+	srand(seed);
 	KnapsackProblem kProblem = generate_problem(n_elements,min_capacity,max_capacity,
 												min_value,max_value,min_weight,max_weight);
 	
@@ -232,7 +304,7 @@ int main(int argc, char const *argv[]){
     *genContMutation = 0;
 
 	for(int i = 0;i < genQty;i++){
-		long long nextBest = passGeneration(&kProblem,population,popSize,selectionRoulette, curBest, mutationRate, report_file, genContPredation, genContMutation, mutationHolderFlag, flag_predacao, flag_mutacao_variavel);
+		long long nextBest = passGeneration(&kProblem,population,popSize,selection, curBest, mutationRate, report_file, genContPredation, genContMutation, mutationHolderFlag, flag_predacao, flag_mutacao_variavel);
 		if(nextBest > curBest){
 			printf(" on Gen [%d]\n",i);
 			curBest = nextBest;
