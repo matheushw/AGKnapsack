@@ -4,6 +4,13 @@
 #include <stdio.h>
 #include <time.h>
 
+#define MUTATION_PERIOD 30
+#define STANDARD_MUTATION_RATE 10
+#define AUGMENTED_MUTATION_RATE 70
+#define DIMINISHED_MUTATION_RATE 2
+
+int mutationRate = STANDARD_MUTATION_RATE;
+
 // Returns indexes of Father and Mother selected by tourney of two
 int* selectionTourneyOfTwo(long long* fitnesses,int popSize,int bestFit){
 	int firstFather = rand() % popSize;
@@ -76,7 +83,7 @@ bool* crossover(bool* Father,bool* Mother,int chromSize){
 void mutate(bool* cromossome,int chromSize){
 	int mutation = rand() % 101;
 
-	if(mutation >= 10){	//PLACEHOLDER: 90% mutation chance
+	if(mutation >= mutationRate){	//PLACEHOLDER: 90% mutation chance
 		int mutatedGene = rand() % chromSize;
 		cromossome[mutatedGene] = (cromossome[mutatedGene]+1) % 2;
 	}
@@ -130,9 +137,9 @@ long long passGeneration(KnapsackProblem* kProblem,bool** population,int popSize
 	// Essa parte é pra garantir que no último print o bestFit vai ser printado pra 
 	// rodar com pop mt grande é melhor printar na inicialização de bestFit mesmo
 	bestFit = maxFitness(popFitnesses,popSize);
-	if(prevBest < popFitnesses[bestFit]){
-		printf("Best fitness: %lld",popFitnesses[bestFit]);
-	}
+	printf("Best fitness: %lld",popFitnesses[bestFit]);
+	// if(prevBest < popFitnesses[bestFit]){
+	// }
 	
 	return popFitnesses[bestFit]; // so pra printar
 }
@@ -175,17 +182,34 @@ int main(int argc, char const *argv[]){
 		printSolution(population[i],kProblem);
 	}
 
-	printf("Insira a quantidade de gerações: ");
-	int genQty; scanf("%d",&genQty);
-
 	long long curBest = -1;
-	for(int i = 0;i < genQty;i++){
+	int genCont = 0;
+	int mutationHolder = 0;
+	int mutationHolderFlag = 0;
+
+	while(getchar()!='e'){
 		long long nextBest = passGeneration(&kProblem,population,popSize,selectionElitism,curBest);
+		printf(" on Gen [%d]", genCont);
 		if(nextBest > curBest){
-			printf(" on Gen [%d]\n",i);
 			curBest = nextBest;
+		} else if (nextBest == curBest && genCont == MUTATION_PERIOD){
+			if(mutationHolderFlag == 0){ //Abaixa a taxa de mutação
+				mutationRate = DIMINISHED_MUTATION_RATE;
+				mutationHolderFlag = 1;
+				genCont = 0;
+			} else if(mutationHolderFlag == 1){ //Aumenta a taxa de mutação
+				mutationRate = AUGMENTED_MUTATION_RATE;
+				mutationHolderFlag = 2;
+				genCont = 0;
+			} else { //Volta a taxa de mutação para o padrão
+				mutationRate = STANDARD_MUTATION_RATE;
+				mutationHolderFlag = 0;
+				genCont = 0;
+			}
 		}
-	}
+		printf(" || Mutation Rate: %d\n", mutationRate);
+		genCont++;
+    }
 
 	printf("Final pop: \n");
 	for(int i = 0; i < popSize;i++){
