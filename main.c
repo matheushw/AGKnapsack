@@ -7,11 +7,24 @@
 #include <time.h>
 #include <getopt.h>
 
-#define PREDATION_PERIOD 100
-#define MUTATION_PERIOD 100
-#define STANDARD_MUTATION_RATE 10
-#define AUGMENTED_MUTATION_RATE 70
-#define DIMINISHED_MUTATION_RATE 2
+int predation_period = 100;
+int mutation_period = 100;
+int standard_mutation_rate = 10;
+int augmented_mutation_rate = 70;
+int diminished_mutation_rate = 2;
+
+int n_elements = 1000;
+int min_capacity = 1;
+int max_capacity = 1000;
+int min_value = 1;
+int max_value = 1000;
+int min_weight = 1; 
+int max_weight = 1000;
+int flag_predacao = 0;
+int flag_mutacao_variavel = 0;
+int flag_verbose;
+int seed = -1;
+int* (*selection)(long long*, int, int) = &selectionRoulette;
 
 // Replace the index-iest chromosome (worst chromosome) with a random generated one
 void randomPredation(bool** population, int popSize, int index){
@@ -91,7 +104,7 @@ long long passGeneration(KnapsackProblem* kProblem,bool** population,int popSize
 
 	int bestFit = maxFitness(popFitnesses,popSize);
 
-	if((*genContPredation) == PREDATION_PERIOD && flag_predacao){
+	if((*genContPredation) == predation_period && flag_predacao){
 		*genContPredation = 0;
 		randomPredation(population, popSize, minFitness(popFitnesses,popSize));		
 		popFitnesses = evaluatePopulation(kProblem,population,popSize);
@@ -137,17 +150,17 @@ long long passGeneration(KnapsackProblem* kProblem,bool** population,int popSize
     long long nextBest = popFitnesses[bestFit];
     free(popFitnesses);
 
-    if (nextBest == prevBest && *genContMutation == MUTATION_PERIOD && flag_mutacao_variavel){
+    if (nextBest == prevBest && *genContMutation == mutation_period && flag_mutacao_variavel){
 		if(*mutationHolderFlag == 0){ //Abaixa a taxa de mutação
-			mutationRate = DIMINISHED_MUTATION_RATE;
+			mutationRate = diminished_mutation_rate;
 			*mutationHolderFlag = 1;
 			*genContMutation = 0;
 		} else if (*mutationHolderFlag == 1){ //Aumenta a taxa de mutação
-			mutationRate = AUGMENTED_MUTATION_RATE;
+			mutationRate = augmented_mutation_rate;
 			*mutationHolderFlag = 2;
 			*genContMutation = 0;
 		} else { //Volta a taxa de mutação para o padrão
-			mutationRate = STANDARD_MUTATION_RATE;
+			mutationRate = standard_mutation_rate;
 			*mutationHolderFlag = 0;
 			*genContMutation = 0;
 		}
@@ -166,18 +179,6 @@ long long passGeneration(KnapsackProblem* kProblem,bool** population,int popSize
 	return nextBest; // so pra printar
 }
 
-int n_elements = 1000;
-int min_capacity = 1;
-int max_capacity = 1000;
-int min_value = 1;
-int max_value = 1000;
-int min_weight = 1; 
-int max_weight = 1000;
-int flag_predacao = 0;
-int flag_mutacao_variavel = 0;
-int flag_verbose;
-int seed = -1;
-int* (*selection)(long long*, int, int) = &selectionRoulette;
 
 // Só pro print da população inicial
 void printSolution(bool* solution,KnapsackProblem kProblem){
@@ -194,27 +195,33 @@ int main(int argc, char const *argv[]){
 
     while (1){
         static struct option long_options[] = {
-            {"--verbose", no_argument, &flag_verbose, 1},
-            {"--quiet", no_argument, &flag_verbose, 0},
+            {"verbose", no_argument, &flag_verbose, 1},
+            {"quiet", no_argument, &flag_verbose, 0},
 
-            {"--n-elements", required_argument, 0, 'n'},
-            {"--min-capacity", required_argument, 0, 'c'},
-            {"--max-capacity", required_argument, 0, 'C'},
-            {"--min-value", required_argument, 0, 'v'},
-            {"--max-value", required_argument, 0, 'V'},
-            {"--min-weight", required_argument, 0, 'w'},
-            {"--max-weight", required_argument, 0, 'W'},
+            {"n-elements", required_argument, 0, 'n'},
+            {"min-capacity", required_argument, 0, 'c'},
+            {"max-capacity", required_argument, 0, 'C'},
+            {"min-value", required_argument, 0, 'v'},
+            {"max-value", required_argument, 0, 'V'},
+            {"min-weight", required_argument, 0, 'w'},
+            {"max-weight", required_argument, 0, 'W'},
             
-            {"--selection", required_argument, 0, 'S'},
-            {"--predation", no_argument, &flag_predacao, 1},
-            {"--ada-mutation", no_argument, &flag_mutacao_variavel, 1},
-            {"--seed", required_argument, 0, 's'},
+            {"selection", required_argument, 0, 'S'},
+            {"predation", no_argument, &flag_predacao, 1},
+            {"ada-mutation", no_argument, &flag_mutacao_variavel, 1},
+            {"seed", required_argument, 0, 's'},
+
+            {"predation-period", required_argument, 0, 'p'},
+            {"mutation-period", required_argument, 0, 'P'},
+            {"mutation-rate", required_argument, 0, 'm'},
+            {"augmented-rate", required_argument, 0, 'A'},
+            {"diminished-rate", required_argument, 0, 'D'},
 
             {0,0,0,0}
         };
 
         int opt = 0, c;
-        c = getopt_long(argc, (char *const *) argv, "n:c:C:v:V:w:W:S:s:", long_options, &opt);
+        c = getopt_long(argc, (char *const *) argv, "n:c:C:v:V:w:W:S:s:p:P:m:A:D:", long_options, &opt);
 
         if (c == -1) break;
 
@@ -255,9 +262,22 @@ int main(int argc, char const *argv[]){
                     return 0;
                 }
                 break;
+            case 'p':
+                predation_period = atoi(optarg);
+                break;
+            case 'P':
+                mutation_period = atoi(optarg);
+                break;
+            case 'm':
+                standard_mutation_rate = atoi(optarg);
+                break;
+            case 'A':
+                augmented_mutation_rate = atoi(optarg);
+                break;
+            case 'D':
+                diminished_mutation_rate = atoi(optarg);
+                break;
             default:
-                printf("Invalid option\n");
-                return 0;
                 break;
                 
         }
@@ -293,7 +313,7 @@ int main(int argc, char const *argv[]){
 	printf("Insira a quantidade de gerações: ");
 	int genQty; scanf("%d",&genQty);
 
-    int mutationRate = STANDARD_MUTATION_RATE;
+    int mutationRate = standard_mutation_rate;
 
 	long long curBest = -1;
     int *genContPredation = (int*) malloc(sizeof(int));
