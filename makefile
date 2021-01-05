@@ -8,7 +8,7 @@
 # make zip: cria o arquivo zip para a submissão
 #=======================================================
 
-objects = baseline.o knap.o main.o
+objects = baseline.o knap.o main.o selection.o
 flags = -g
 
 all: $(objects) 

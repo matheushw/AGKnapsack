@@ -1,5 +1,6 @@
 #include "knap.h"
 #include "baseline.h"
+#include "selection.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -10,43 +11,6 @@
 #define AUGMENTED_MUTATION_RATE 70
 #define DIMINISHED_MUTATION_RATE 2
 
-
-// Returns indexes of Father and Mother selected by tourney of two
-int* selectionTourneyOfTwo(long long* fitnesses,int popSize,int bestFit){
-	int firstFather = rand() % popSize;
-	int firstMother = rand() % popSize;
-
-	int secondFather = rand() % popSize;
-	while(secondFather == firstFather){
-		secondFather = rand() % popSize;
-	}
-
-	int secondMother = rand() % popSize;
-	while(secondMother == firstMother){
-		secondMother = rand() % popSize;
-	}
-
-	int Father = fitnesses[firstFather] > fitnesses[secondFather]? firstFather : secondFather;
-	int Mother = fitnesses[firstMother] > fitnesses[secondMother]? firstMother : secondMother;
-
-	int* parents = malloc(2 * sizeof(int));
-	parents[0] = Father;
-	parents[1] = Mother;
-	return parents;
-}
-
-// Returns indexes of bestFit and random Parent that is not best Fit
-int* selectionElitism(long long* fitnesses,int popSize,int bestFit){
-	int parent = rand() % popSize;
-	while(parent == bestFit){
-		parent = rand() % popSize;
-	}
-
-	int* parents = malloc(2 * sizeof(int));
-	parents[0] = bestFit;
-	parents[1] = parent;
-	return parents;
-}
 
 // Returns index of inidividual with best fitness on fitnesses
 int maxFitness(long long* fitnesses,int fitnessQty){
@@ -77,7 +41,7 @@ bool* crossover(bool* Father,bool* Mother,int chromSize){
 
 // Binary -> Flips a random gene in cromossome
 void mutate(bool* cromossome,int chromSize, int mutationRate){
-    while(rand() % 101 >= mutationRate){
+    if(rand() % 101 >= mutationRate){
 		int mutatedGene = rand() % chromSize;
 		cromossome[mutatedGene] = (cromossome[mutatedGene]+1) % 2;
 	}
@@ -93,9 +57,16 @@ long long* evaluatePopulation(KnapsackProblem* kProblem,bool** population,int po
 	return popFitnesses;
 }
 
+void report_to_file(long long* popFitnesses, int popSize, FILE* file){
+    if (!file) return;
+    fprintf(file, "[");
+    for (int i = 0; i < popSize - 1; i++)fprintf(file, "%lld, ", popFitnesses[i]);
+    fprintf(file, "%lld]\n", popFitnesses[popSize - 1]);
+}
+
 // prevBest é só pra printar, em funcionalidade não muda nada aliás, a função
 // pode retornar void tbm, só retorna o bestFit pra poder printar tbm
-long long passGeneration(KnapsackProblem* kProblem,bool** population,int popSize,int* select(),long long prevBest, int mutationRate){
+long long passGeneration(KnapsackProblem* kProblem,bool** population,int popSize,int* select(),long long prevBest, int mutationRate, FILE* report_file){
 	long long* popFitnesses = evaluatePopulation(kProblem,population,popSize);
 
 	int bestFit = maxFitness(popFitnesses,popSize);
@@ -134,6 +105,8 @@ long long passGeneration(KnapsackProblem* kProblem,bool** population,int popSize
 	if(prevBest < popFitnesses[bestFit]){
 		printf("Best fitness: %lld",popFitnesses[bestFit]);
 	}
+
+    report_to_file(popFitnesses, popSize, report_file);
 
     long long v = popFitnesses[bestFit];
     free(popFitnesses);
@@ -178,10 +151,17 @@ int main(int argc, char const *argv[]){
 		printSolution(population[i],kProblem);
 	}
 
-    printf("Greedy solution:  %lld\n", greedy_solution(kProblem));
-    if (kProblem.n_elements * kProblem.capacity < 100000000)
+    FILE* report_file = fopen("report.jsonl", "w");
+
+    long long greedy = greedy_solution(kProblem);
+    printf("Greedy solution:  %lld\n", greedy);
+    fprintf(report_file, "[%lld]\n", greedy);
+
+    if (kProblem.n_elements * kProblem.capacity < 100000000){
+        long long opt = optimal_solution(kProblem);
         printf("Optimal solution: %lld\n", optimal_solution(kProblem));
-    else
+        fprintf(report_file, "[%lld]\n", opt);
+    }else
         printf("Optimal solution could not be calculated\n");
 
 	printf("Insira a quantidade de gerações: ");
@@ -195,7 +175,7 @@ int main(int argc, char const *argv[]){
     int mutationHolderFlag = 0;
 
 	for(int i = 0;i < genQty;i++){
-		long long nextBest = passGeneration(&kProblem,population,popSize,selectionElitism,curBest,mutationRate);
+		long long nextBest = passGeneration(&kProblem,population,popSize,selectionRoulette,curBest,mutationRate, report_file);
 		if(nextBest > curBest){
 			printf(" on Gen [%d]\n",i);
 			curBest = nextBest;
