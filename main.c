@@ -248,8 +248,11 @@ int main(int argc, char const *argv[]){
                     selection = &selectionElitism;
                 }else if (strcmp(optarg, "torneio") == 0){
                     selection = &selectionTourneyOfTwo;
-                }else{
+                }else if (strcmp(optarg, "roleta") == 0){
                     selection = &selectionRoulette;
+                }else{
+                    printf("Invalid selection method\n");
+                    return 0;
                 }
                 break;
             default:
@@ -260,10 +263,7 @@ int main(int argc, char const *argv[]){
         }
     }
 
-
-
-
-
+    if (seed == -1) seed = time(NULL);
 	srand(seed);
 	KnapsackProblem kProblem = generate_problem(n_elements,min_capacity,max_capacity,
 												min_value,max_value,min_weight,max_weight);
