@@ -6,11 +6,18 @@
 #include <stdio.h>
 #include <time.h>
 
-#define MUTATION_PERIOD 30
+#define PREDATION_PERIOD 100
+#define MUTATION_PERIOD 100
 #define STANDARD_MUTATION_RATE 10
 #define AUGMENTED_MUTATION_RATE 70
 #define DIMINISHED_MUTATION_RATE 2
 
+// Replace the index-iest chromosome (worst chromosome) with a random generated one
+void randomPredation(bool** population, int popSize, int index){
+	for (int i=0; i<popSize; i++){
+		population[index][i] = (bool)(rand()%2);
+	}
+}
 
 // Returns index of inidividual with best fitness on fitnesses
 int maxFitness(long long* fitnesses,int fitnessQty){
@@ -22,6 +29,18 @@ int maxFitness(long long* fitnesses,int fitnessQty){
 	}
 
 	return bestFit;
+}
+
+// Returns index of inidividual with worst fitness on fitnesses
+int minFitness(long long* fitnesses,int fitnessQty){
+	int worstFit = 0;	
+	for(int i = 1;i < fitnessQty;i++){
+		if(fitnesses[i] < fitnesses[worstFit]){
+			worstFit = i;
+		}
+	}
+
+	return worstFit;
 }
 
 // Mix genes of Father and Mother one by one. Randomly selects initial parent
@@ -66,10 +85,16 @@ void report_to_file(long long* popFitnesses, int popSize, FILE* file){
 
 // prevBest é só pra printar, em funcionalidade não muda nada aliás, a função
 // pode retornar void tbm, só retorna o bestFit pra poder printar tbm
-long long passGeneration(KnapsackProblem* kProblem,bool** population,int popSize,int* select(),long long prevBest, int mutationRate, FILE* report_file){
+long long passGeneration(KnapsackProblem* kProblem,bool** population,int popSize,int* select(),long long prevBest, int mutationRate, FILE* report_file, int *genContPredation, int *genContMutation, int *mutationHolderFlag, int flag_predacao, int flag_mutacao_variavel){
 	long long* popFitnesses = evaluatePopulation(kProblem,population,popSize);
 
 	int bestFit = maxFitness(popFitnesses,popSize);
+
+	if((*genContPredation) == PREDATION_PERIOD && flag_predacao){
+		*genContPredation = 0;
+		randomPredation(population, popSize, minFitness(popFitnesses,popSize));		
+		popFitnesses = evaluatePopulation(kProblem,population,popSize);
+	}
 
 	bool** nextPopulation = malloc(popSize * sizeof(bool*));
 	int chromSize = kProblem->n_elements;
@@ -106,11 +131,38 @@ long long passGeneration(KnapsackProblem* kProblem,bool** population,int popSize
 		printf("Best fitness: %lld",popFitnesses[bestFit]);
 	}
 
-    report_to_file(popFitnesses, popSize, report_file);
+	report_to_file(popFitnesses, popSize, report_file);
 
-    long long v = popFitnesses[bestFit];
+    long long nextBest = popFitnesses[bestFit];
     free(popFitnesses);
-	return v; // so pra printar
+
+    if (nextBest == prevBest && *genContMutation == MUTATION_PERIOD && flag_mutacao_variavel){
+		if(*mutationHolderFlag == 0){ //Abaixa a taxa de mutação
+			mutationRate = DIMINISHED_MUTATION_RATE;
+			*mutationHolderFlag = 1;
+			*genContMutation = 0;
+		} else if (*mutationHolderFlag == 1){ //Aumenta a taxa de mutação
+			mutationRate = AUGMENTED_MUTATION_RATE;
+			*mutationHolderFlag = 2;
+			*genContMutation = 0;
+		} else { //Volta a taxa de mutação para o padrão
+			mutationRate = STANDARD_MUTATION_RATE;
+			*mutationHolderFlag = 0;
+			*genContMutation = 0;
+		}
+	} else if (nextBest != prevBest){
+		*genContMutation = 0;
+	}
+
+	if(flag_predacao){
+		(*genContPredation)++;
+	}
+
+	if(flag_mutacao_variavel){
+	    (*genContMutation)++;
+	}
+
+	return nextBest; // so pra printar
 }
 
 // Só pro print da população inicial
@@ -123,9 +175,9 @@ void printSolution(bool* solution,KnapsackProblem kProblem){
 }
 
 int main(int argc, char const *argv[]){
-	if(argc != 8){
+	if(argc != 10){
 		printf("Passe os seguintes parâmetros: <n_elementos> <capacidade_min>"
-		" <capacidade_max> <val_min> <val_max> <peso_min> <peso_max>\n");
+		" <capacidade_max> <val_min> <val_max> <peso_min> <peso_max> <flag_predacao> <flag_mutacao_variavel>\n");
 		return 0;
 	}
 
@@ -138,6 +190,8 @@ int main(int argc, char const *argv[]){
 	int max_value = atoi(argv[5]);
     int min_weight = atoi(argv[6]);
 	int max_weight = atoi(argv[7]);
+	int flag_predacao = atoi(argv[8]);
+	int flag_mutacao_variavel = atoi(argv[9]);
 
 	KnapsackProblem kProblem = generate_problem(n_elements,min_capacity,max_capacity,
 												min_value,max_value,min_weight,max_weight);
@@ -170,30 +224,19 @@ int main(int argc, char const *argv[]){
     int mutationRate = STANDARD_MUTATION_RATE;
 
 	long long curBest = -1;
-    int genCont = 0;
-    int mutationHolder = 0;
-    int mutationHolderFlag = 0;
+    int *genContPredation = (int*) malloc(sizeof(int));
+    int *genContMutation = (int*) malloc(sizeof(int));
+    int *mutationHolderFlag = (int*) malloc(sizeof(int));
+    *mutationHolderFlag = 0;
+    *genContPredation = 0;
+    *genContMutation = 0;
 
 	for(int i = 0;i < genQty;i++){
-		long long nextBest = passGeneration(&kProblem,population,popSize,selectionRoulette,curBest,mutationRate, report_file);
+		long long nextBest = passGeneration(&kProblem,population,popSize,selectionRoulette, curBest, mutationRate, report_file, genContPredation, genContMutation, mutationHolderFlag, flag_predacao, flag_mutacao_variavel);
 		if(nextBest > curBest){
 			printf(" on Gen [%d]\n",i);
 			curBest = nextBest;
-		} else if (nextBest == curBest && genCont == MUTATION_PERIOD){
-			if(mutationHolderFlag == 0){ //Abaixa a taxa de mutação
-				mutationRate = DIMINISHED_MUTATION_RATE;
-				mutationHolderFlag = 1;
-				genCont = 0;
-			} else if(mutationHolderFlag == 1){ //Aumenta a taxa de mutação
-				mutationRate = AUGMENTED_MUTATION_RATE;
-				mutationHolderFlag = 2;
-				genCont = 0;
-			} else { //Volta a taxa de mutação para o padrão
-				mutationRate = STANDARD_MUTATION_RATE;
-				mutationHolderFlag = 0;
-				genCont = 0;
-			}
-		}			
+		} 
 	}
 
 	printf("Final pop: \n");
