@@ -5,11 +5,26 @@
 #include <string.h>
 #include <stdio.h>
 #include <time.h>
+#include <getopt.h>
 
-#define MUTATION_PERIOD 30
-#define STANDARD_MUTATION_RATE 10
-#define AUGMENTED_MUTATION_RATE 70
-#define DIMINISHED_MUTATION_RATE 2
+int predation_period = 100;
+int mutation_period = 100;
+int standard_mutation_rate = 10;
+int augmented_mutation_rate = 70;
+int diminished_mutation_rate = 2;
+
+int n_elements = 1000;
+int min_capacity = 1;
+int max_capacity = 1000;
+int min_value = 1;
+int max_value = 1000;
+int min_weight = 1; 
+int max_weight = 1000;
+int flag_predacao = 0;
+int flag_mutacao_variavel = 0;
+int flag_verbose;
+int seed = -1;
+int* (*selection)(long long*, int, int) = &selectionRoulette;
 
 typedef struct KNAPSACK_POPULATION_{
 	bool** population;
@@ -23,7 +38,7 @@ KnapsackPopulation* generatePopulation(KnapsackProblem* kProblem,int size){
 
 	kPop->size = size;
 	kPop->bestFit = 0;
-	kPop->mutationRate = STANDARD_MUTATION_RATE;
+	kPop->mutationRate = standard_mutation_rate;
 
 	kPop->population = malloc(kPop->size * sizeof(bool*));
 	for(int i = 0; i < kPop->size;i++){
@@ -147,7 +162,7 @@ void printSolution(bool* solution,KnapsackProblem kProblem){
 }
 
 long long evolutiveSolution(KnapsackProblem* kProblem,KnapsackPopulation* kPop,int genQty,FILE* reportFile){
-	kPop->mutationRate = STANDARD_MUTATION_RATE;
+	kPop->mutationRate = standard_mutation_rate;
 
 	long long curBest = -1;
     int genCont = 0;
@@ -155,22 +170,22 @@ long long evolutiveSolution(KnapsackProblem* kProblem,KnapsackPopulation* kPop,i
     int mutationHolderFlag = 0;
 	
 	for(int i = 0;i < genQty;i++){
-		long long nextBest = passGeneration(kProblem,kPop,selectionRoulette,reportFile);
+		long long nextBest = passGeneration(kProblem,kPop,selection,reportFile);
 		
 		if(nextBest > curBest){
 			printf("Best fitness: %lld on Gen [%d]\tRate: %d\n",nextBest,i,kPop->mutationRate);
 			curBest = nextBest;
-		}else if (nextBest == curBest && genCont == MUTATION_PERIOD){
+		}else if (nextBest == curBest && genCont == mutation_period){
 			if(mutationHolderFlag == 0){ //Abaixa a taxa de mutação
-				kPop->mutationRate = DIMINISHED_MUTATION_RATE;
+				kPop->mutationRate = diminished_mutation_rate;
 				mutationHolderFlag = 1;
 				genCont = 0;
 			}else if(mutationHolderFlag == 1){ //Aumenta a taxa de mutação
-				kPop->mutationRate = AUGMENTED_MUTATION_RATE;
+				kPop->mutationRate = augmented_mutation_rate;
 				mutationHolderFlag = 2;
 				genCont = 0;
 			}else{ 		//Volta a taxa de mutação para o padrão
-				kPop->mutationRate = STANDARD_MUTATION_RATE;
+				kPop->mutationRate = standard_mutation_rate;
 				mutationHolderFlag = 0;
 				genCont = 0;
 			}
@@ -181,22 +196,109 @@ long long evolutiveSolution(KnapsackProblem* kProblem,KnapsackPopulation* kPop,i
 }
 
 int main(int argc, char const *argv[]){
-	if(argc != 8){
-		printf("Passe os seguintes parâmetros: <n_elementos> <capacidade_min>"
-		" <capacidade_max> <val_min> <val_max> <peso_min> <peso_max>\n");
-		return 0;
-	}
+    int popSize = 0, genQty = 0;
 
-	srand(time(NULL));
+    while (1){
+        static struct option long_options[] = {
+            {"verbose", no_argument, &flag_verbose, 1},
+            {"quiet", no_argument, &flag_verbose, 0},
 
-	int n_elements = atoi(argv[1]);
-    int min_capacity = atoi(argv[2]);
-	int max_capacity = atoi(argv[3]);
-    int min_value = atoi(argv[4]);
-	int max_value = atoi(argv[5]);
-    int min_weight = atoi(argv[6]);
-	int max_weight = atoi(argv[7]);
+            {"n-elements", required_argument, 0, 'n'},
+            {"min-capacity", required_argument, 0, 'c'},
+            {"max-capacity", required_argument, 0, 'C'},
+            {"min-value", required_argument, 0, 'v'},
+            {"max-value", required_argument, 0, 'V'},
+            {"min-weight", required_argument, 0, 'w'},
+            {"max-weight", required_argument, 0, 'W'},
+            
+            {"selection", required_argument, 0, 'S'},
+            {"predation", no_argument, &flag_predacao, 1},
+            {"ada-mutation", no_argument, &flag_mutacao_variavel, 1},
+            {"seed", required_argument, 0, 's'},
 
+            {"predation-period", required_argument, 0, 'p'},
+            {"mutation-period", required_argument, 0, 'X'},
+            {"mutation-rate", required_argument, 0, 'm'},
+            {"augmented-rate", required_argument, 0, 'A'},
+            {"diminished-rate", required_argument, 0, 'D'},
+
+            {"population_size", required_argument, 0, 'P'},
+            {"generations", required_argument, 0, 'G'},
+
+            {0,0,0,0}
+        };
+
+        int opt = 0, c;
+        c = getopt_long(argc, (char *const *) argv, "n:c:C:v:V:w:W:S:s:p:P:m:A:D:X:G:", long_options, &opt);
+
+        if (c == -1) break;
+
+        switch(c){
+            case 'n':
+                n_elements = atoi(optarg);
+                break;
+            case 'c':
+                min_capacity = atoi(optarg);
+                break;
+            case 'C':
+                max_capacity = atoi(optarg);
+                break;
+            case 'v':
+                min_value = atoi(optarg);
+                break;
+            case 'V':
+                max_value = atoi(optarg);
+                break;
+            case 'w':
+                min_weight = atoi(optarg);
+                break;
+            case 'W':
+                max_weight = atoi(optarg);
+                break;
+            case 's':
+                seed = atoi(optarg);
+                break;
+            case 'S':
+                if (strcmp(optarg, "elitismo") == 0){
+                    selection = &selectionElitism;
+                }else if (strcmp(optarg, "torneio") == 0){
+                    selection = &selectionTourneyOfTwo;
+                }else if (strcmp(optarg, "roleta") == 0){
+                    selection = &selectionRoulette;
+                }else{
+                    printf("Invalid selection method\n");
+                    return 0;
+                }
+                break;
+            case 'p':
+                predation_period = atoi(optarg);
+                break;
+            case 'X':
+                mutation_period = atoi(optarg);
+                break;
+            case 'm':
+                standard_mutation_rate = atoi(optarg);
+                break;
+            case 'A':
+                augmented_mutation_rate = atoi(optarg);
+                break;
+            case 'D':
+                diminished_mutation_rate = atoi(optarg);
+                break;
+            case 'P':
+                popSize = atoi(optarg);
+                break;
+            case 'G':
+                genQty = atoi(optarg);
+                break;
+            default:
+                break;
+                
+        }
+    }
+
+    if (seed == -1) seed = time(NULL);
+	srand(seed);
 	KnapsackProblem kProblem = generate_problem(n_elements,min_capacity,max_capacity,
 												min_value,max_value,min_weight,max_weight);
 	
@@ -218,13 +320,17 @@ int main(int argc, char const *argv[]){
 		printf("Optimal solution could not be calculated\n");
 	}
 
-	printf("Insira o tamanho da população: ");
-	int popSize; scanf("%d",&popSize);
+	if (popSize == 0){
+	    printf("Insira o tamanho da população: ");
+	    scanf("%d",&popSize);
+    }
 
 	KnapsackPopulation* kPop = generatePopulation(&kProblem,popSize);
 
-	printf("Insira a quantidade de gerações: ");
-	int genQty; scanf("%d",&genQty);
+    if (genQty == 0){
+        printf("Insira a quantidade de gerações: ");
+        scanf("%d",&genQty);
+    }
 
 	start = clock();
 	long long evolutive = evolutiveSolution(&kProblem,kPop,genQty,reportFile);
