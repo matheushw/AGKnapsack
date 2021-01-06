@@ -8,9 +8,9 @@ Existem ainda aproximações gulosas das soluções do problema, as quais são m
 
 O Problema da Mochila consiste no seguinte processo de otimização:
 
-Dada uma mochila de capacidade $k$ e $n$ objetos, cada um associado a um par $(p_i, v_i)$ que representa o seu Peso e seu Valor, escolha um subconjunto de objetos de modo a maximizar o seu valor total sujeito à condição de que o seu peso total é menor ou igual à capacidade da mochila.
+Dada uma mochila de capacidade _k_ e _n_ objetos, cada um associado a um par _(p<sub>i</sub>, v<sub>i</sub>)_ que representa o seu Peso e seu Valor, escolha um subconjunto de objetos de modo a maximizar o seu valor total sujeito à condição de que o seu peso total é menor ou igual à capacidade da mochila.
 
-É possível representando uma possível solução com um vetor binário $[c_i]$, com cada entrada $c_i$ indicando se o elemento $i$ está ou não no subconjunto escolhido. Dessa maneira, o problema se resume a:
+É possível representando uma possível solução com um vetor binário _[c<sub>i</sub>]_, com cada entrada _c<sub>i</sub>_ indicando se o elemento _i_ está ou não no subconjunto escolhido. Dessa maneira, o problema se resume a:
 
 Encontre 
 $$\max \sum_i c_i v_i$$
@@ -20,8 +20,8 @@ $$\sum_i c_i p_i \leq k$$
 ## As soluções exatas
 
 Para podermos comparar diferentes variedades do algoritmo evolutivo, é necessário conhecer o verdadeiro valor ótimo para a otimização anterior. São utilizados dois algoritmos para comparação:
- - Uma solução ótima por programação dinâmica em $O(nk)$
- - Uma solução gulosa, próxima da ótima, em $O(N)$
+ - Uma solução ótima por programação dinâmica em _O(nk)_
+ - Uma solução gulosa, próxima da ótima, em _O(N)_
 
 ## O Indivíduo
 
@@ -34,7 +34,7 @@ Como na solução ótima a maioria dos itens não são utilizados, os indivíduo
 
 Caso um indivíduo tenha um cromossomo com um peso total válido (isto é, menor que a capacidade da mochila), o seu fitness é igual ao valor total dos objetos.
 
-Porém, para indivíduos com pesos inválidos, não é possível utilizar esse valor. Em seu lugar, usamos o seu peso total multiplicado por $-1$, para levar o Algoritmo Evolutivo a preferir cromossomos válidos.
+Porém, para indivíduos com pesos inválidos, não é possível utilizar esse valor. Em seu lugar, usamos o seu peso total multiplicado por _-1_, para levar o Algoritmo Evolutivo a preferir cromossomos válidos.
 
 
 ## O Crossover
@@ -78,17 +78,17 @@ Onde o mesmo não estiver especificado, o algoritmo utilizado será a Seleção 
 
 
 ### Efeitos do tamanho do problema
-É esperado que, ao aumentar o possível número de itens possíveis, ocorra uma redução na performance do Algoritmo Evolutivo comparado à solução ótima, devido ao grande aumento do espaço de busca. Para confirmar essa hipótese, foram feitos sucessivos experimentos com diferentes valores de $n$ (escala logarítmica no eixo x):
+É esperado que, ao aumentar o possível número de itens possíveis, ocorra uma redução na performance do Algoritmo Evolutivo comparado à solução ótima, devido ao grande aumento do espaço de busca. Para confirmar essa hipótese, foram feitos sucessivos experimentos com diferentes valores de _n_ (escala logarítmica no eixo x):
 
 ![scale](scale.png)
 
-Assim, vemos que a solução obtida é quase ótima para $n < 100$, deteriorando em seguida devido ao aumento do espaço de busca.
+Assim, vemos que a solução obtida é quase ótima para _n < 100_, deteriorando em seguida devido ao aumento do espaço de busca.
 
 
 ### Efeitos do tamanho da população e número de gerações
-O custo computacional do Algoritmo Evolutivo é aproximadamente $O(P \cdot G)$, onde $P$ é o tamanho da população e $G$ é o número de gerações. Assim, é possível variar um dos valores arbitrariamente, e o custo computacional será aproximadamente o mesmo, desde que o outro valor seja alterado para manter o produto constante.
+O custo computacional do Algoritmo Evolutivo é aproximadamente _O(P G)_, onde _P_ é o tamanho da população e _G_ é o número de gerações. Assim, é possível variar um dos valores arbitrariamente, e o custo computacional será aproximadamente o mesmo, desde que o outro valor seja alterado para manter o produto constante.
 
-Para verificar essa hipótese, nós realizamos experimentos, fixando $P \cdot G$ em $100000$, na tentativa de encontrar os valores ótimos para o tamanho da população e o número de gerações em um dado tempo (o tamanho do cromossomo é fixado em $1000$):
+Para verificar essa hipótese, nós realizamos experimentos, fixando _PG_ em _100000_, na tentativa de encontrar os valores ótimos para o tamanho da população e o número de gerações em um dado tempo (o tamanho do cromossomo é fixado em _1000_):
 
 ![population](population.png)
 
