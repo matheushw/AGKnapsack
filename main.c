@@ -146,6 +146,40 @@ void printSolution(bool* solution,KnapsackProblem kProblem){
 	printf("] Fitness: %lld\n",evaluate_solution(kProblem,solution));
 }
 
+long long evolutiveSolution(KnapsackProblem* kProblem,KnapsackPopulation* kPop,int genQty,FILE* reportFile){
+	kPop->mutationRate = STANDARD_MUTATION_RATE;
+
+	long long curBest = -1;
+    int genCont = 0;
+    int mutationHolder = 0;
+    int mutationHolderFlag = 0;
+	
+	for(int i = 0;i < genQty;i++){
+		long long nextBest = passGeneration(kProblem,kPop,selectionRoulette,reportFile);
+		
+		if(nextBest > curBest){
+			printf("Best fitness: %lld on Gen [%d]\tRate: %d\n",nextBest,i,kPop->mutationRate);
+			curBest = nextBest;
+		}else if (nextBest == curBest && genCont == MUTATION_PERIOD){
+			if(mutationHolderFlag == 0){ //Abaixa a taxa de mutação
+				kPop->mutationRate = DIMINISHED_MUTATION_RATE;
+				mutationHolderFlag = 1;
+				genCont = 0;
+			}else if(mutationHolderFlag == 1){ //Aumenta a taxa de mutação
+				kPop->mutationRate = AUGMENTED_MUTATION_RATE;
+				mutationHolderFlag = 2;
+				genCont = 0;
+			}else{ 		//Volta a taxa de mutação para o padrão
+				kPop->mutationRate = STANDARD_MUTATION_RATE;
+				mutationHolderFlag = 0;
+				genCont = 0;
+			}
+		}
+	}
+
+	return curBest;
+}
+
 int main(int argc, char const *argv[]){
 	if(argc != 8){
 		printf("Passe os seguintes parâmetros: <n_elementos> <capacidade_min>"
@@ -192,38 +226,9 @@ int main(int argc, char const *argv[]){
 	printf("Insira a quantidade de gerações: ");
 	int genQty; scanf("%d",&genQty);
 
-	kPop->mutationRate = STANDARD_MUTATION_RATE;
-
-	long long curBest = -1;
-    int genCont = 0;
-    int mutationHolder = 0;
-    int mutationHolderFlag = 0;
-	
-	start = clock();	// Actual evolutionary algorithm starts here
-	for(int i = 0;i < genQty;i++){
-		long long nextBest = passGeneration(&kProblem,kPop,selectionRoulette,reportFile);
-		
-		if(nextBest > curBest){
-			printf("Best fitness: %lld on Gen [%d]\tRate: %d\n",nextBest,i,kPop->mutationRate);
-			curBest = nextBest;
-		}else if (nextBest == curBest && genCont == MUTATION_PERIOD){
-			if(mutationHolderFlag == 0){ //Abaixa a taxa de mutação
-				kPop->mutationRate = DIMINISHED_MUTATION_RATE;
-				mutationHolderFlag = 1;
-				genCont = 0;
-			}else if(mutationHolderFlag == 1){ //Aumenta a taxa de mutação
-				kPop->mutationRate = AUGMENTED_MUTATION_RATE;
-				mutationHolderFlag = 2;
-				genCont = 0;
-			}else{ 		//Volta a taxa de mutação para o padrão
-				kPop->mutationRate = STANDARD_MUTATION_RATE;
-				mutationHolderFlag = 0;
-				genCont = 0;
-			}
-		}
-	}
-
-	printf("Final best: %lld\tAchieved in %lf\n",curBest,(double)(clock() - start) / CLOCKS_PER_SEC);
+	start = clock();
+	long long evolutive = evolutiveSolution(&kProblem,kPop,genQty,reportFile);
+	printf("Final best: %lld\tAchieved in %lf\n",evolutive,(double)(clock() - start) / CLOCKS_PER_SEC);
 
     free(kProblem.values);
     free(kProblem.weights);
