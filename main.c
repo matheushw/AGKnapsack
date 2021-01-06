@@ -27,7 +27,7 @@ KnapsackPopulation* generatePopulation(KnapsackProblem* kProblem,int size){
 
 	kPop->population = malloc(kPop->size * sizeof(bool*));
 	for(int i = 0; i < kPop->size;i++){
-		kPop->population[i] = generate_solution(kProblem);
+		kPop->population[i] = generate_solution(*kProblem);
 	}
 
 	return kPop;
@@ -38,7 +38,7 @@ void delPopulation(KnapsackPopulation* kPop){
 		free(kPop->population[i]);
 	}
 	free(kPop->population);
-	
+
 	free(kPop);
 }
 
