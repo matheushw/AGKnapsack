@@ -4,6 +4,11 @@ Nesse projeto estudamos a aplicação de algoritmos genéticos no problema Knaps
 
 Existem ainda aproximações gulosas das soluções do problema, as quais são muitas vezes extremamente próximas ao ótimo global. Assim, o problema Knapsack é ideal para a comparação de diferentes variações de Algoritmos Evolutivos, já que é possível testar rapidamente diferentes combinações de parâmetros.
 
+## Autores
+ - Gabriel Victor Cardoso Fernandes - Número USP 11878296
+ - João Marcos Cardoso da Silva - Número USP 11795314
+ - Matheus Barcellos de Castro Cunha - Número USP 11208238
+
 ## O problema
 
 O Problema da Mochila consiste no seguinte processo de otimização:
