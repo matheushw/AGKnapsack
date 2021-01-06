@@ -13,9 +13,12 @@ Dada uma mochila de capacidade _k_ e _n_ objetos, cada um associado a um par _(p
 É possível representando uma possível solução com um vetor binário _[c<sub>i</sub>]_, com cada entrada _c<sub>i</sub>_ indicando se o elemento _i_ está ou não no subconjunto escolhido. Dessa maneira, o problema se resume a:
 
 Encontre 
-![formula1](\max \sum_i c_i v_i)
+
+![formula1](formula1.png)
+
 Sujeito à condição: 
-![formula2](\sum_i c_i p_i \leq k)
+
+![formula2](formula2.png)
 
 ## As soluções exatas
 
