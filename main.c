@@ -106,13 +106,6 @@ long long passGeneration(KnapsackProblem* kProblem,KnapsackPopulation* kPop,int*
 	}
 	free(nextPopulation);
 
-	// // Essa parte é pra garantir que no último print o bestFit vai ser printado pra 
-	// // rodar com pop mt grande é melhor printar na inicialização de bestFit mesmo
-	// bestFit = maxFitness(popFitnesses,kPop->size);
-	// if(prevBest < popFitnesses[bestFit]){
-	// 	printf("Best fitness: %lld",popFitnesses[bestFit]);
-	// }
-
     report_to_file(popFitnesses, kPop->size, reportFile);
 
     long long bestFitness = popFitnesses[kPop->bestFit];
