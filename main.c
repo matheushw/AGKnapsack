@@ -230,6 +230,8 @@ int main(int argc, char const *argv[]){
 	long long evolutive = evolutiveSolution(&kProblem,kPop,genQty,reportFile);
 	printf("Final best: %lld\tAchieved in %lf\n",evolutive,(double)(clock() - start) / CLOCKS_PER_SEC);
 
+	fclose(reportFile);
+
     free(kProblem.values);
     free(kProblem.weights);
 	
