@@ -18,6 +18,30 @@ typedef struct KNAPSACK_POPULATION_{
 	int mutationRate;
 }KnapsackPopulation;
 
+KnapsackPopulation* generatePopulation(KnapsackProblem* kProblem,int size){
+	KnapsackPopulation* kPop = malloc(sizeof(KnapsackPopulation));
+
+	kPop->size = size;
+	kPop->bestFit = 0;
+	kPop->mutationRate = STANDARD_MUTATION_RATE;
+
+	kPop->population = malloc(kPop->size * sizeof(bool*));
+	for(int i = 0; i < kPop->size;i++){
+		kPop->population[i] = generate_solution(kProblem);
+	}
+
+	return kPop;
+}
+
+void delPopulation(KnapsackPopulation* kPop){
+	for(int i = 0;i < kPop->size;i++){
+		free(kPop->population[i]);
+	}
+	free(kPop->population);
+	
+	free(kPop);
+}
+
 // Returns index of inidividual with best fitness on fitnesses
 int maxFitness(long long* fitnesses,int fitnessQty){
 	int bestFit = 0;	
@@ -160,17 +184,10 @@ int main(int argc, char const *argv[]){
 		printf("Optimal solution could not be calculated\n");
 	}
 
-	//TODO: move KnapsackPopulation allocation into separate function
-	KnapsackPopulation* kPop = malloc(sizeof(KnapsackPopulation));
-
 	printf("Insira o tamanho da população: ");
-	scanf("%d",&kPop->size);
+	int popSize; scanf("%d",&popSize);
 
-	kPop->population = malloc(kPop->size * sizeof(bool*));
-	for(int i = 0; i < kPop->size;i++){
-		kPop->population[i] = generate_solution(kProblem);
-		// printSolution(population[i],kProblem);
-	}
+	KnapsackPopulation* kPop = generatePopulation(&kProblem,popSize);
 
 	printf("Insira a quantidade de gerações: ");
 	int genQty; scanf("%d",&genQty);
@@ -210,13 +227,8 @@ int main(int argc, char const *argv[]){
 
     free(kProblem.values);
     free(kProblem.weights);
-
-	//TODO: move KnapsackPopulation destruction into separate function
-	for(int i = 0;i < kPop->size;i++){
-		free(kPop->population[i]);
-	}
-	free(kPop->population);
-	free(kPop);
 	
+	delPopulation(kPop);
+
 	return 0;
 }
