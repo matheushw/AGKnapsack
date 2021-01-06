@@ -134,17 +134,15 @@ long long passGeneration(KnapsackProblem* kProblem,KnapsackPopulation* kPop,int*
 	long long* popFitnesses = evaluatePopulation(kProblem,kPop);
 
 	kPop->bestFit = maxFitness(popFitnesses,kPop->size);
-
-	if (flag_predacao){
-		if((*genContPredation) == predation_period){
-			*genContPredation = 0;
-			randomPredation(kPop, minFitness(popFitnesses, kPop->size));		
-			popFitnesses = evaluatePopulation(kProblem, kPop);
-		}
-
-		(*genContPredation)++;
+	
+	if((*genContPredation) == predation_period){
+		*genContPredation = 0;
+		randomPredation(kPop, minFitness(popFitnesses, kPop->size));		
+		popFitnesses = evaluatePopulation(kProblem, kPop);
 	}
 
+	(*genContPredation)++;
+	
 	bool** nextPopulation = malloc(kPop->size * sizeof(bool*));
 	int chromSize = kProblem->n_elements;
 	for(int i = 0;i < kPop->size;i++){
@@ -216,7 +214,7 @@ long long evolutiveSolution(KnapsackProblem* kProblem, KnapsackPopulation* kPop,
 					kPop->mutationRate = augmented_mutation_rate;
 					mutationHolderFlag = 2;
 					genContMutation = 0;
-				} else{ 	//Volta a taxa de mutação para o padrão
+				} else{ //Volta a taxa de mutação para o padrão
 					kPop->mutationRate = standard_mutation_rate;
 					mutationHolderFlag = 0;
 					genContMutation = 0;
@@ -262,9 +260,6 @@ int main(int argc, char const *argv[]){
 
             {0,0,0,0}
         };
-
-        flag_predacao = 1;
-        flag_mutacao_variavel = 1;
 
         int opt = 0, c;
         c = getopt_long(argc, (char *const *) argv, "n:c:C:v:V:w:W:S:s:p:P:m:A:D:X:G:", long_options, &opt);
