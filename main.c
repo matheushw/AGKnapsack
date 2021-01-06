@@ -48,6 +48,13 @@ KnapsackPopulation* generatePopulation(KnapsackProblem* kProblem,int size){
 	return kPop;
 }
 
+// Replace the index-iest chromosome (worst chromosome) with a random generated one
+void randomPredation(KnapsackPopulation* kPop, int index){
+	for (int i=0; i<kPop->size; i++){
+		kPop->population[index][i] = 0;
+	}
+}
+
 void delPopulation(KnapsackPopulation* kPop){
 	for(int i = 0;i < kPop->size;i++){
 		free(kPop->population[i]);
@@ -69,6 +76,18 @@ int maxFitness(long long* fitnesses,int fitnessQty){
 	return bestFit;
 }
 
+// Returns index of inidividual with worst fitness on fitnesses
+int minFitness(long long* fitnesses,int fitnessQty){
+	int worstFit = 0;	
+	for(int i = 1;i < fitnessQty;i++){
+		if(fitnesses[i] < fitnesses[worstFit]){
+			worstFit = i;
+		}
+	}
+
+	return worstFit;
+}
+
 // Mix genes of Father and Mother one by one. Randomly selects initial parent
 bool* crossover(bool* Father,bool* Mother,int chromSize){
 	bool* child = malloc(chromSize * sizeof(bool));
@@ -86,7 +105,7 @@ bool* crossover(bool* Father,bool* Mother,int chromSize){
 
 // Binary -> Flips a random gene in cromossome
 void mutate(bool* cromossome,int chromSize, int mutationRate){
-    if(rand() % 101 >= mutationRate){
+    if(rand() % 101 <= mutationRate){
 		int mutatedGene = rand() % chromSize;
 		cromossome[mutatedGene] = (cromossome[mutatedGene]+1) % 2;
 	}
@@ -111,10 +130,20 @@ void report_to_file(long long* popFitnesses, int popSize, FILE* file){
 
 // prevBest é só pra printar, em funcionalidade não muda nada aliás, a função
 // pode retornar void tbm, só retorna o bestFit pra poder printar tbm
-long long passGeneration(KnapsackProblem* kProblem,KnapsackPopulation* kPop,int* select(), FILE* reportFile){
+long long passGeneration(KnapsackProblem* kProblem,KnapsackPopulation* kPop,int* select(), FILE* reportFile, int *genContPredation){
 	long long* popFitnesses = evaluatePopulation(kProblem,kPop);
 
 	kPop->bestFit = maxFitness(popFitnesses,kPop->size);
+
+	if (flag_predacao){
+		if((*genContPredation) == predation_period){
+			*genContPredation = 0;
+			randomPredation(kPop, minFitness(popFitnesses, kPop->size));		
+			popFitnesses = evaluatePopulation(kProblem, kPop);
+		}
+
+		(*genContPredation)++;
+	}
 
 	bool** nextPopulation = malloc(kPop->size * sizeof(bool*));
 	int chromSize = kProblem->n_elements;
@@ -161,35 +190,41 @@ void printSolution(bool* solution,KnapsackProblem kProblem){
 	printf("] Fitness: %lld\n",evaluate_solution(kProblem,solution));
 }
 
-long long evolutiveSolution(KnapsackProblem* kProblem,KnapsackPopulation* kPop,int genQty,FILE* reportFile){
+long long evolutiveSolution(KnapsackProblem* kProblem, KnapsackPopulation* kPop, int genQty,FILE* reportFile){
 	kPop->mutationRate = standard_mutation_rate;
 
 	long long curBest = -1;
-    int genCont = 0;
-    int mutationHolder = 0;
+    int genContMutation = 0;
     int mutationHolderFlag = 0;
+    int *genContPredation = (int*) malloc(sizeof(int));
+    *genContPredation = 0; 
 	
 	for(int i = 0;i < genQty;i++){
-		long long nextBest = passGeneration(kProblem,kPop,selection,reportFile);
+		long long nextBest = passGeneration(kProblem,kPop,selection,reportFile, genContPredation);
 		
 		if(nextBest > curBest){
 			printf("Best fitness: %lld on Gen [%d]\tRate: %d\n",nextBest,i,kPop->mutationRate);
 			curBest = nextBest;
-		}else if (nextBest == curBest && genCont == mutation_period){
-			if(mutationHolderFlag == 0){ //Abaixa a taxa de mutação
-				kPop->mutationRate = diminished_mutation_rate;
-				mutationHolderFlag = 1;
-				genCont = 0;
-			}else if(mutationHolderFlag == 1){ //Aumenta a taxa de mutação
-				kPop->mutationRate = augmented_mutation_rate;
-				mutationHolderFlag = 2;
-				genCont = 0;
-			}else{ 		//Volta a taxa de mutação para o padrão
-				kPop->mutationRate = standard_mutation_rate;
-				mutationHolderFlag = 0;
-				genCont = 0;
+		} else if (nextBest == curBest){
+			genContMutation++;
+			if(genContMutation == mutation_period){
+				if(mutationHolderFlag == 0){ //Abaixa a taxa de mutação
+					kPop->mutationRate = diminished_mutation_rate;
+					mutationHolderFlag = 1;
+					genContMutation = 0;
+				} else if(mutationHolderFlag == 1){ //Aumenta a taxa de mutação
+					kPop->mutationRate = augmented_mutation_rate;
+					mutationHolderFlag = 2;
+					genContMutation = 0;
+				} else{ 	//Volta a taxa de mutação para o padrão
+					kPop->mutationRate = standard_mutation_rate;
+					mutationHolderFlag = 0;
+					genContMutation = 0;
+				}
 			}
-		}
+		} else if (nextBest != curBest){
+			genContMutation = 0;
+		} 
 	}
 
 	return curBest;
@@ -227,6 +262,9 @@ int main(int argc, char const *argv[]){
 
             {0,0,0,0}
         };
+
+        flag_predacao = 1;
+        flag_mutacao_variavel = 1;
 
         int opt = 0, c;
         c = getopt_long(argc, (char *const *) argv, "n:c:C:v:V:w:W:S:s:p:P:m:A:D:X:G:", long_options, &opt);
