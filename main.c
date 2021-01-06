@@ -27,8 +27,8 @@ int seed = -1;
 int* (*selection)(long long*, int, int) = &selectionRoulette;
 
 // Replace the index-iest chromosome (worst chromosome) with a random generated one
-void randomPredation(bool** population, int popSize, int index){
-	for (int i=0; i<popSize; i++){
+void randomPredation(bool** population, int n_elements, int index){
+	for (int i=0; i<n_elements; i++){
 		population[index][i] = (bool)(rand()%2);
 	}
 }
@@ -106,7 +106,7 @@ long long passGeneration(KnapsackProblem* kProblem,bool** population,int popSize
 
 	if((*genContPredation) == predation_period && flag_predacao){
 		*genContPredation = 0;
-		randomPredation(population, popSize, minFitness(popFitnesses,popSize));		
+		randomPredation(population, kProblem -> n_elements, minFitness(popFitnesses,popSize));		
 		popFitnesses = evaluatePopulation(kProblem,population,popSize);
 	}
 
@@ -192,6 +192,7 @@ void printSolution(bool* solution,KnapsackProblem kProblem){
 
 
 int main(int argc, char const *argv[]){
+    int popSize = 0, genQty = 0;
 
     while (1){
         static struct option long_options[] = {
@@ -212,16 +213,19 @@ int main(int argc, char const *argv[]){
             {"seed", required_argument, 0, 's'},
 
             {"predation-period", required_argument, 0, 'p'},
-            {"mutation-period", required_argument, 0, 'P'},
+            {"mutation-period", required_argument, 0, 'X'},
             {"mutation-rate", required_argument, 0, 'm'},
             {"augmented-rate", required_argument, 0, 'A'},
             {"diminished-rate", required_argument, 0, 'D'},
+
+            {"population_size", required_argument, 0, 'P'},
+            {"generations", required_argument, 0, 'G'},
 
             {0,0,0,0}
         };
 
         int opt = 0, c;
-        c = getopt_long(argc, (char *const *) argv, "n:c:C:v:V:w:W:S:s:p:P:m:A:D:", long_options, &opt);
+        c = getopt_long(argc, (char *const *) argv, "n:c:C:v:V:w:W:S:s:p:P:m:A:D:X:G:", long_options, &opt);
 
         if (c == -1) break;
 
@@ -265,7 +269,7 @@ int main(int argc, char const *argv[]){
             case 'p':
                 predation_period = atoi(optarg);
                 break;
-            case 'P':
+            case 'X':
                 mutation_period = atoi(optarg);
                 break;
             case 'm':
@@ -277,6 +281,12 @@ int main(int argc, char const *argv[]){
             case 'D':
                 diminished_mutation_rate = atoi(optarg);
                 break;
+            case 'P':
+                popSize = atoi(optarg);
+                break;
+            case 'G':
+                genQty = atoi(optarg);
+                break;
             default:
                 break;
                 
@@ -287,9 +297,10 @@ int main(int argc, char const *argv[]){
 	srand(seed);
 	KnapsackProblem kProblem = generate_problem(n_elements,min_capacity,max_capacity,
 												min_value,max_value,min_weight,max_weight);
-	
-	printf("Insira o tamanho da população: ");
-	int popSize; scanf("%d",&popSize);
+	if (popSize == 0){
+	    printf("Insira o tamanho da população: ");
+	    scanf("%d",&popSize);
+    }
 
 	bool** population = malloc(popSize * sizeof(bool*));
 	for(int i = 0; i < popSize;i++){
@@ -310,8 +321,10 @@ int main(int argc, char const *argv[]){
     }else
         printf("Optimal solution could not be calculated\n");
 
-	printf("Insira a quantidade de gerações: ");
-	int genQty; scanf("%d",&genQty);
+    if (genQty == 0){
+	    printf("Insira a quantidade de gerações: ");
+	    scanf("%d",&genQty);
+    }
 
     int mutationRate = standard_mutation_rate;
 
@@ -341,5 +354,7 @@ int main(int argc, char const *argv[]){
     free(kProblem.values);
     free(kProblem.weights);
     free(population);
+
+    fclose(report_file);
 	return 0;
 }
