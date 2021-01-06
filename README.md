@@ -42,7 +42,7 @@ Porém, para indivíduos com pesos inválidos, não é possível utilizar esse v
 Já que a ordem dos objetos no vetor é completamente arbitrária, não faz sentido a utilização de métodos tradicionais de Crossover como a divisão do cromossomo de cada um dos pais ao meio.
 
 Em vez disso, o crossover é feito posição à posição, sendo a escolha de cada gene do filho independente:
-![[crossover.jpg]]
+![crossover](crossover.jpg)
 
 
 ## A Mutação
@@ -80,7 +80,7 @@ Onde o mesmo não estiver especificado, o algoritmo utilizado será a Seleção 
 ### Efeitos do tamanho do problema
 É esperado que, ao aumentar o possível número de itens possíveis, ocorra uma redução na performance do Algoritmo Evolutivo comparado à solução ótima, devido ao grande aumento do espaço de busca. Para confirmar essa hipótese, foram feitos sucessivos experimentos com diferentes valores de $n$ (escala logarítmica no eixo x):
 
-![[scale.png]]
+![scale](scale.png)
 
 Assim, vemos que a solução obtida é quase ótima para $n < 100$, deteriorando em seguida devido ao aumento do espaço de busca.
 
@@ -90,7 +90,7 @@ O custo computacional do Algoritmo Evolutivo é aproximadamente $O(P \cdot G)$, 
 
 Para verificar essa hipótese, nós realizamos experimentos, fixando $P \cdot G$ em $100000$, na tentativa de encontrar os valores ótimos para o tamanho da população e o número de gerações em um dado tempo (o tamanho do cromossomo é fixado em $1000$):
 
-![[population.png]]
+![population](population.png)
 
 
 Assim, nós vemos que o algoritmo funciona melhor com populações relativamente grandes, as quais permitem uma maior exploração do espaço de busca, mesmo com a redução no número de gerações.
@@ -99,7 +99,7 @@ Assim, nós vemos que o algoritmo funciona melhor com populações relativamente
 ### Efeitos do método de seleção
 Nós realizamos experimentos comparando os diferentes métodos de seleção (torneio de 2, elitismo e roleta) para diferentes tamanhos do problema. Os resultados estão resumidos no gráfico abaixo:
 
-![[selection.png]]
+![selection](selection.png)
 
 Assim, vemos que o elitismo se destacou sobre os demais.
 
@@ -116,7 +116,7 @@ Como a mutação ocorre em apenas um único gene, utilizar a mutação variável
 ## Curvas de treinamento
 Abaixo estão algumas curvas de treinamento, comparadas às soluções ótima e gulosa. Pode ser visto que em alguns casos, o Algoritmo Evolutivo chega próximo da solução ótima. Porém, em outros casos, o mesmo fica preso em um mínimo local no início do treinamento.
 
-![[runs.png]]
+![runs](runs.png)
 
 
 
